@@ -1,33 +1,27 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { MinimalResultsDisplay } from "@/components/custom/MinimalResultsDisplay";
+import { ReportModal } from "@/components/custom/ReportModal";
 import { analyzeUrl, type AnalysisResult } from "@/lib/analysis";
 import { Search, FlaskConical } from "lucide-react";
 
 const EXAMPLE_PHISHING_URL =
-    "http://192.168.1.100/secure-login@update-verify.account.pw/%70assword-confirm";
+    "http://аmazon.com.account-verify.xyz/secure-login@update-verify";
 
 export function UrlChecker() {
     const [url, setUrl] = useState("");
     const [result, setResult] = useState<AnalysisResult | null>(null);
-    const [hasAnalyzed, setHasAnalyzed] = useState(false);
+    const [modalOpen, setModalOpen] = useState(false);
 
     function handleAnalyze(value?: string) {
         const target = (value ?? url).trim();
         if (!target) return;
         setResult(analyzeUrl(target));
-        setHasAnalyzed(true);
+        setModalOpen(true);
     }
 
     function handleKeyDown(e: React.KeyboardEvent) {
         if (e.key === "Enter") handleAnalyze();
-    }
-
-    function handleClear() {
-        setUrl("");
-        setResult(null);
-        setHasAnalyzed(false);
     }
 
     function handleTryExample() {
@@ -67,27 +61,20 @@ export function UrlChecker() {
                 </Button>
             </div>
 
-            {!hasAnalyzed && (
-                <button
-                    onClick={handleTryExample}
-                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                >
-                    <FlaskConical className="h-3.5 w-3.5" />
-                    Try an example phishing URL
-                </button>
-            )}
+            <button
+                onClick={handleTryExample}
+                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+                <FlaskConical className="h-3.5 w-3.5" />
+                Try an example phishing URL
+            </button>
 
-            {hasAnalyzed && result && (
-                <>
-                    <MinimalResultsDisplay result={result} />
-                    <button
-                        onClick={handleClear}
-                        className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
-                    >
-                        Clear &amp; start over
-                    </button>
-                </>
-            )}
+            <ReportModal
+                result={result}
+                open={modalOpen}
+                onClose={() => setModalOpen(false)}
+                inputLabel="URL"
+            />
         </div>
     );
 }
