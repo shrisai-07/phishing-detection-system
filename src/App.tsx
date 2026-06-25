@@ -212,8 +212,6 @@ function App() {
             
             {/* Frosted Glass Console Panel */}
             <div className="glass-card rounded-2xl p-6 md:p-8 animate-in relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-bl-full pointer-events-none" />
-              
               <Tabs defaultValue="url" className="w-full">
                 <TabsList variant="line" className="mb-8 w-full justify-start border-b border-border/60">
                   <TabsTrigger value="url" id="tab-url" className="text-sm font-semibold tracking-wide">
@@ -404,8 +402,6 @@ function App() {
             
             {/* Widget: Activity Radar & Search Ledger */}
             <div className="glass-card rounded-2xl p-6 md:p-7 flex flex-col h-full animate-in relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-bl-full pointer-events-none" />
-              
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <History className="h-4.5 w-4.5 text-muted-foreground" />
