@@ -3,21 +3,25 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { ReportModal } from "@/components/custom/ReportModal";
 import { analyzeMessage, type AnalysisResult } from "@/lib/analysis";
-import { ScanSearch, FlaskConical } from "lucide-react";
+import { ScanSearch, FlaskConical, CheckCircle2 } from "lucide-react";
 
-const EXAMPLE_PHISHING_MESSAGE = `Dear Customer,
+const EXAMPLE_SAFE_MESSAGE = `Dear Customer,
 
-URGENT: Your acc0unt has been suspended due to unusual activity. We have detected unauthorized access and your account will be permanently deleted within 24 hours unless you act now.
+Please be informed that your monthly bank statement for the account ending in 4321 is now available for download in your secure online banking portal.
 
-Click here to v3rify your account immediately: http://secure-banking-update.tk/verify-login
+Remember, our bank will never ask you to reply with your OTP, PIN, or password via SMS or email.
 
-You must confirm your identity and enter your password to restore access. Please send us your OTP and credit card number for verification.
+Thank you,
+Customer Support Team`;
 
-Kindly do the needful and revert back to us ASAP. This is your FINAL WARNING — do not delay!
+const EXAMPLE_CRITICAL_MESSAGE = `URGENT: Your account has been suspended due to unauthorized access attempts!
 
-Regards,
-Amazon Security Team
-Official Notice - Action Required`;
+To secure your account and avoid permanent deletion, you must act within 24 hours.
+
+Please click the link below to verify your login credentials immediately:
+http://secure-banking-update.tk/verify-login
+
+Kindly enter your password and reply with your OTP right away to restore access.`;
 
 export function MessageScanner() {
     const [message, setMessage] = useState("");
@@ -31,9 +35,9 @@ export function MessageScanner() {
         setModalOpen(true);
     }
 
-    function handleTryExample() {
-        setMessage(EXAMPLE_PHISHING_MESSAGE);
-        handleScan(EXAMPLE_PHISHING_MESSAGE);
+    function handleTryExample(value: string) {
+        setMessage(value);
+        handleScan(value);
     }
 
     return (
@@ -65,13 +69,22 @@ export function MessageScanner() {
                 Scan Message
             </Button>
 
-            <button
-                onClick={handleTryExample}
-                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-                <FlaskConical className="h-3.5 w-3.5" />
-                Try an example phishing message
-            </button>
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+                <button
+                    onClick={() => handleTryExample(EXAMPLE_SAFE_MESSAGE)}
+                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                    Try a safe message
+                </button>
+                <button
+                    onClick={() => handleTryExample(EXAMPLE_CRITICAL_MESSAGE)}
+                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                    <FlaskConical className="h-3.5 w-3.5 text-red-500" />
+                    Try a critical message
+                </button>
+            </div>
 
             <ReportModal
                 result={result}

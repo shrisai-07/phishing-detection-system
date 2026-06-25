@@ -3,9 +3,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ReportModal } from "@/components/custom/ReportModal";
 import { analyzePhone, type AnalysisResult } from "@/lib/analysis";
-import { PhoneCall, FlaskConical } from "lucide-react";
+import { PhoneCall, FlaskConical, CheckCircle2 } from "lucide-react";
 
-const EXAMPLE_SCAM_NUMBER = "+2221234567890";
+const EXAMPLE_SAFE_NUMBER = "+91 98765 43210";
+const EXAMPLE_CRITICAL_NUMBER = "+222 999999999999999";
 
 export function CallVerifier() {
     const [phoneNumber, setPhoneNumber] = useState("");
@@ -33,9 +34,9 @@ export function CallVerifier() {
         }
     }
 
-    function handleTryExample() {
-        setPhoneNumber(EXAMPLE_SCAM_NUMBER);
-        handleVerify(EXAMPLE_SCAM_NUMBER);
+    function handleTryExample(value: string) {
+        setPhoneNumber(value);
+        handleVerify(value);
     }
 
     return (
@@ -91,13 +92,22 @@ export function CallVerifier() {
                 )}
             </div>
 
-            <button
-                onClick={handleTryExample}
-                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-                <FlaskConical className="h-3.5 w-3.5" />
-                Try an example scam number
-            </button>
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+                <button
+                    onClick={() => handleTryExample(EXAMPLE_SAFE_NUMBER)}
+                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                    Try a safe number
+                </button>
+                <button
+                    onClick={() => handleTryExample(EXAMPLE_CRITICAL_NUMBER)}
+                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                    <FlaskConical className="h-3.5 w-3.5 text-red-500" />
+                    Try a critical scam number
+                </button>
+            </div>
 
             <ReportModal
                 result={result}

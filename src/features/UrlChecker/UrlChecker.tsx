@@ -3,9 +3,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ReportModal } from "@/components/custom/ReportModal";
 import { analyzeUrl, type AnalysisResult } from "@/lib/analysis";
-import { Search, FlaskConical } from "lucide-react";
+import { Search, FlaskConical, CheckCircle2 } from "lucide-react";
 
-const EXAMPLE_PHISHING_URL =
+const EXAMPLE_SAFE_URL = "https://www.amazon.com/gp/css/homepage.html";
+const EXAMPLE_CRITICAL_URL =
     "http://аmazon.com.account-verify.xyz/secure-login@update-verify";
 
 export function UrlChecker() {
@@ -24,9 +25,9 @@ export function UrlChecker() {
         if (e.key === "Enter") handleAnalyze();
     }
 
-    function handleTryExample() {
-        setUrl(EXAMPLE_PHISHING_URL);
-        handleAnalyze(EXAMPLE_PHISHING_URL);
+    function handleTryExample(value: string) {
+        setUrl(value);
+        handleAnalyze(value);
     }
 
     return (
@@ -61,13 +62,22 @@ export function UrlChecker() {
                 </Button>
             </div>
 
-            <button
-                onClick={handleTryExample}
-                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-                <FlaskConical className="h-3.5 w-3.5" />
-                Try an example phishing URL
-            </button>
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+                <button
+                    onClick={() => handleTryExample(EXAMPLE_SAFE_URL)}
+                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                    Try a safe URL
+                </button>
+                <button
+                    onClick={() => handleTryExample(EXAMPLE_CRITICAL_URL)}
+                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                    <FlaskConical className="h-3.5 w-3.5 text-red-500" />
+                    Try a critical phishing URL
+                </button>
+            </div>
 
             <ReportModal
                 result={result}
