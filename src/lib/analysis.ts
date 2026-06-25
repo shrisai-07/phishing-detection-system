@@ -403,6 +403,62 @@ export function analyzeMessage(text: string): AnalysisResult {
     });
     if (grammarIssues) score += 10;
 
+    // ── Deep Scanner Integration ──
+    // Extract URLs
+    const urls: string[] = [];
+    const urlMatches = text.match(/(https?:\/\/[^\s]+|www\.[^\s]+)/gi);
+    if (urlMatches) {
+        urls.push(...urlMatches);
+    }
+
+    // Extract Phone Numbers
+    const phones: string[] = [];
+    const phoneMatches = text.match(/\+?\b\d[\d\s\-()]{7,18}\d\b/g);
+    if (phoneMatches) {
+        for (const rawPhone of phoneMatches) {
+            const digits = rawPhone.replace(/\D/g, "");
+            // A valid phone number should have between 8 and 15 digits
+            if (digits.length >= 8 && digits.length <= 15) {
+                // Avoid date strings like YYYYMMDD (starting with 19 or 20)
+                if (!/^(19|20)\d{6}$/.test(digits)) {
+                    phones.push(rawPhone.trim());
+                }
+            }
+        }
+    }
+
+    // Run deep URL analysis and append triggered findings
+    for (const messageUrl of urls) {
+        const urlResult = analyzeUrl(messageUrl);
+        for (const finding of urlResult.findings) {
+            if (finding.triggered) {
+                findings.push({
+                    label: `URL [${messageUrl}]: ${finding.label}`,
+                    description: finding.description,
+                    points: finding.points,
+                    triggered: true,
+                });
+                score += finding.points;
+            }
+        }
+    }
+
+    // Run deep Phone analysis and append triggered findings
+    for (const messagePhone of phones) {
+        const phoneResult = analyzePhone(messagePhone);
+        for (const finding of phoneResult.findings) {
+            if (finding.triggered) {
+                findings.push({
+                    label: `Phone [${messagePhone}]: ${finding.label}`,
+                    description: finding.description,
+                    points: finding.points,
+                    triggered: true,
+                });
+                score += finding.points;
+            }
+        }
+    }
+
     score = Math.min(score, 100);
 
     // ── Build verdict ──
