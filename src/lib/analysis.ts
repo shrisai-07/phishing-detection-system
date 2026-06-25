@@ -147,9 +147,12 @@ export function analyzeUrl(raw: string): AnalysisResult {
     if (shortenerMatch) score += 20;
 
     // ── Step 5: High Entropy Domain (+20) ──
-    const domainBase = hostname.split(".").slice(0, -1).join(".");
+    const suffix = regDomain.substring(regDomain.indexOf("."));
+    const domainBase = hostname.endsWith(suffix) ? hostname.slice(0, -suffix.length) : hostname;
     const entropy = shannonEntropy(domainBase);
-    const highEntropy = entropy > 3.5 && domainBase.length > 6;
+    // Shannon entropy > 3.5 mathematically requires a length of at least 12 characters (log2(12) ≈ 3.58).
+    // This is a reliable threshold for long random/DGA domains while preventing false positives on short words.
+    const highEntropy = entropy > 3.5 && domainBase.length >= 12;
     findings.push({
         label: "High entropy domain name",
         description: highEntropy
