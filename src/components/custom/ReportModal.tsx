@@ -15,6 +15,7 @@ interface ReportModalProps {
     open: boolean;
     onClose: () => void;
     inputLabel: string; // e.g. "URL", "Message", "Phone Number"
+    inputValue: string; // The raw input value that was analyzed
 }
 
 function scoreColor(score: number) {
@@ -31,7 +32,7 @@ function riskIcon(score: number) {
     return <ShieldX className="h-5 w-5 text-red-600" />;
 }
 
-export function ReportModal({ result, open, onClose, inputLabel }: ReportModalProps) {
+export function ReportModal({ result, open, onClose, inputLabel, inputValue }: ReportModalProps) {
     if (!result) return null;
 
     const colors = scoreColor(result.score);
@@ -50,6 +51,19 @@ export function ReportModal({ result, open, onClose, inputLabel }: ReportModalPr
                         Detailed threat analysis report for the submitted {inputLabel.toLowerCase()}.
                     </DialogDescription>
                 </DialogHeader>
+
+                {/* ── Input Value Display ── */}
+                <div className="mt-2.5 text-xs border border-border/60 bg-muted/40 rounded-md px-3 py-2">
+                    <span className="font-semibold text-muted-foreground block mb-1 uppercase tracking-wider text-[10px]">
+                        Analyzed {inputLabel}:
+                    </span>
+                    <div className="font-mono break-all text-foreground select-all leading-normal max-h-24 overflow-y-auto pr-1">
+                        {inputLabel === "Message" && inputValue.length > 200
+                            ? `${inputValue.slice(0, 200)}...`
+                            : inputValue
+                        }
+                    </div>
+                </div>
 
                 <DialogClose asChild>
                     <button

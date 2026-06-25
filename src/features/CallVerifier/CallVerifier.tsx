@@ -10,6 +10,7 @@ const EXAMPLE_CRITICAL_NUMBER = "+222 999999999999999";
 
 export function CallVerifier() {
     const [phoneNumber, setPhoneNumber] = useState("");
+    const [analyzedPhoneNum, setAnalyzedPhoneNum] = useState("");
     const [selectedRegion, setSelectedRegion] = useState("");
     const [result, setResult] = useState<AnalysisResult | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
@@ -24,6 +25,7 @@ export function CallVerifier() {
         const isTargetPlus = target.startsWith("+");
         const defaultRegion = isTargetPlus ? undefined : selectedRegion;
 
+        setAnalyzedPhoneNum(target);
         setResult(analyzePhone(target, defaultRegion));
         setModalOpen(true);
     }
@@ -114,6 +116,7 @@ export function CallVerifier() {
                 open={modalOpen}
                 onClose={() => setModalOpen(false)}
                 inputLabel="Phone Number"
+                inputValue={analyzedPhoneNum}
             />
         </div>
     );

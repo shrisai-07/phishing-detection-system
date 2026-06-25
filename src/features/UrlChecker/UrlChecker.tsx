@@ -11,12 +11,14 @@ const EXAMPLE_CRITICAL_URL =
 
 export function UrlChecker() {
     const [url, setUrl] = useState("");
+    const [analyzedUrl, setAnalyzedUrl] = useState("");
     const [result, setResult] = useState<AnalysisResult | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
 
     function handleAnalyze(value?: string) {
         const target = (value ?? url).trim();
         if (!target) return;
+        setAnalyzedUrl(target);
         setResult(analyzeUrl(target));
         setModalOpen(true);
     }
@@ -84,6 +86,7 @@ export function UrlChecker() {
                 open={modalOpen}
                 onClose={() => setModalOpen(false)}
                 inputLabel="URL"
+                inputValue={analyzedUrl}
             />
         </div>
     );

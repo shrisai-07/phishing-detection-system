@@ -25,12 +25,14 @@ Kindly enter your password and reply with your OTP right away to restore access.
 
 export function MessageScanner() {
     const [message, setMessage] = useState("");
+    const [analyzedMessage, setAnalyzedMessage] = useState("");
     const [result, setResult] = useState<AnalysisResult | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
 
     function handleScan(value?: string) {
         const target = (value ?? message).trim();
         if (!target) return;
+        setAnalyzedMessage(target);
         setResult(analyzeMessage(target));
         setModalOpen(true);
     }
@@ -91,6 +93,7 @@ export function MessageScanner() {
                 open={modalOpen}
                 onClose={() => setModalOpen(false)}
                 inputLabel="Message"
+                inputValue={analyzedMessage}
             />
         </div>
     );
