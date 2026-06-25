@@ -8,7 +8,7 @@ import { PhoneCall, FlaskConical, CheckCircle2 } from "lucide-react";
 const EXAMPLE_SAFE_NUMBER = "+91 98765 43210";
 const EXAMPLE_CRITICAL_NUMBER = "+222 999999999999999";
 
-export function CallVerifier() {
+export function CallVerifier({ onScanComplete }: { onScanComplete?: (value: string, result: AnalysisResult) => void }) {
     const [phoneNumber, setPhoneNumber] = useState("");
     const [analyzedPhoneNum, setAnalyzedPhoneNum] = useState("");
     const [selectedRegion, setSelectedRegion] = useState("");
@@ -26,8 +26,12 @@ export function CallVerifier() {
         const defaultRegion = isTargetPlus ? undefined : selectedRegion;
 
         setAnalyzedPhoneNum(target);
-        setResult(analyzePhone(target, defaultRegion));
+        const res = analyzePhone(target, defaultRegion);
+        setResult(res);
         setModalOpen(true);
+        if (onScanComplete) {
+            onScanComplete(target, res);
+        }
     }
 
     function handleKeyDown(e: React.KeyboardEvent) {

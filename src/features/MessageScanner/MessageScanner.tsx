@@ -23,7 +23,7 @@ http://secure-banking-update.tk/verify-login
 
 Kindly enter your password and reply with your OTP right away to restore access.`;
 
-export function MessageScanner() {
+export function MessageScanner({ onScanComplete }: { onScanComplete?: (value: string, result: AnalysisResult) => void }) {
     const [message, setMessage] = useState("");
     const [analyzedMessage, setAnalyzedMessage] = useState("");
     const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -33,8 +33,12 @@ export function MessageScanner() {
         const target = (value ?? message).trim();
         if (!target) return;
         setAnalyzedMessage(target);
-        setResult(analyzeMessage(target));
+        const res = analyzeMessage(target);
+        setResult(res);
         setModalOpen(true);
+        if (onScanComplete) {
+            onScanComplete(target, res);
+        }
     }
 
     function handleTryExample(value: string) {

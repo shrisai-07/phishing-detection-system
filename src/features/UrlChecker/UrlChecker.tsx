@@ -9,7 +9,7 @@ const EXAMPLE_SAFE_URL = "https://www.amazon.com/gp/css/homepage.html";
 const EXAMPLE_CRITICAL_URL =
     "http://аmazon.com.account-verify.xyz/secure-login@update-verify";
 
-export function UrlChecker() {
+export function UrlChecker({ onScanComplete }: { onScanComplete?: (value: string, result: AnalysisResult) => void }) {
     const [url, setUrl] = useState("");
     const [analyzedUrl, setAnalyzedUrl] = useState("");
     const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -19,8 +19,12 @@ export function UrlChecker() {
         const target = (value ?? url).trim();
         if (!target) return;
         setAnalyzedUrl(target);
-        setResult(analyzeUrl(target));
+        const res = analyzeUrl(target);
+        setResult(res);
         setModalOpen(true);
+        if (onScanComplete) {
+            onScanComplete(target, res);
+        }
     }
 
     function handleKeyDown(e: React.KeyboardEvent) {
