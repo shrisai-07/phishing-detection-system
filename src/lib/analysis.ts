@@ -230,6 +230,8 @@ const SENSITIVE_DATA_PATTERNS = [
     /\b(otp|pin|password|cvv|card\s*number|credit\s*card|debit\s*card|aadhaar|aadhar|ssn|social\s*security)\b.*\b(send|share|provide|enter|confirm|reply|give)\b/i,
 ];
 
+const NEGATION_PATTERN = /\b(never|do\s+not|don'?t|should\s+not|shouldn'?t|will\s+never|will\s+not|won'?t|not\s+to|no\s+one\s+will|nobody\s+will)\b\s*(?:ask|request|tell|require|force|ask\s+you\s+to|request\s+you\s+to)?\s*(?:\w+\s+){0,3}\b(send|share|provide|enter|confirm|reply|give)\b/i;
+
 const URGENCY_PHRASES = [
     "act now", "immediately", "urgent", "expire", "suspended",
     "within 24 hours", "within 48 hours", "last chance", "final warning",
@@ -259,7 +261,21 @@ export function analyzeMessage(text: string): AnalysisResult {
     const lower = text.toLowerCase();
 
     // ── Step 1: Requests Sensitive Information (+40) ──
-    const requestsSensitive = SENSITIVE_DATA_PATTERNS.some((r) => r.test(text));
+    // Split text into sentences/clauses to examine contexts individually
+    const sentences = text.split(/[.!?\n]+/);
+    let requestsSensitive = false;
+    for (const sentence of sentences) {
+        const trimmed = sentence.trim();
+        if (!trimmed) continue;
+        const matchesSensitive = SENSITIVE_DATA_PATTERNS.some((r) => r.test(trimmed));
+        if (matchesSensitive) {
+            // If the matching sentence is not negated, we have an active threat
+            if (!NEGATION_PATTERN.test(trimmed)) {
+                requestsSensitive = true;
+                break;
+            }
+        }
+    }
     findings.push({
         label: "Requests sensitive information",
         description: requestsSensitive
