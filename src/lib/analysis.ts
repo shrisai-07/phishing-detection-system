@@ -121,7 +121,9 @@ export function analyzeUrl(raw: string): AnalysisResult {
     if (brandInSubdomain) score += 35;
 
     // ── Step 3: @ Symbol (+30) ──
-    const hasAtSymbol = url.includes("@");
+    const urlWithoutProtocol = lower.replace(/^(https?:\/\/)?(www\.)?/, "");
+    const authorityPart = urlWithoutProtocol.split(/[/?#]/)[0];
+    const hasAtSymbol = authorityPart.includes("@");
     findings.push({
         label: "@ symbol in URL",
         description: hasAtSymbol
