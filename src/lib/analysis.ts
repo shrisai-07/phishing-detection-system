@@ -63,6 +63,20 @@ function hasHomoglyphs(domain: string): boolean {
         /[\u0370-\u03FF]/.test(domain);    // Greek
 }
 
+/** Returns true if the hostname is a raw IPv4 or IPv6 address */
+function isIpAddress(hostname: string): boolean {
+    const cleanHost = hostname.replace("[", "").replace("]", ""); // strip IPv6 brackets
+    // IPv4 check
+    if (/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(cleanHost)) {
+        return cleanHost.split(".").every((num) => {
+            const val = parseInt(num, 10);
+            return val >= 0 && val <= 255;
+        });
+    }
+    // IPv6 check (basic test: has multiple colons and valid hex/colon characters)
+    return cleanHost.split(":").length >= 3 && /^[0-9a-f:]+$/i.test(cleanHost);
+}
+
 /** Extract registered domain (last two parts of hostname) */
 function registeredDomain(hostname: string): string {
     const parts = hostname.split(".");
@@ -105,9 +119,20 @@ export function analyzeUrl(raw: string): AnalysisResult {
         triggered: homoglyphDetected,
     });
     if (homoglyphDetected) score += 40;
+    // ── Step 2: Raw IP Address Hostname (+40) ──
+    const isIp = isIpAddress(hostname);
+    findings.push({
+        label: "Raw IP address hostname",
+        description: isIp
+            ? "The URL uses a raw IP address instead of a domain name. Phishers use this to bypass domain reputation checks. Legitimate websites almost never do this."
+            : "The URL uses a domain name hostname, not a raw IP address.",
+        points: 40,
+        triggered: isIp,
+    });
+    if (isIp) score += 40;
 
-    // ── Step 2: Brand Used as Subdomain (+35) ──
-    const brandInSubdomain = BRAND_NAMES.some(
+    // ── Step 3: Brand Used as Subdomain (+35) ──
+    const brandInSubdomain = !isIp && BRAND_NAMES.some(
         (brand) => lower.includes(brand) && !regDomain.includes(brand)
     );
     findings.push({
@@ -120,7 +145,7 @@ export function analyzeUrl(raw: string): AnalysisResult {
     });
     if (brandInSubdomain) score += 35;
 
-    // ── Step 3: @ Symbol (+30) ──
+    // ── Step 4: @ Symbol (+30) ──
     const urlWithoutProtocol = lower.replace(/^(https?:\/\/)?(www\.)?/, "");
     const authorityPart = urlWithoutProtocol.split(/[/?#]/)[0];
     const hasAtSymbol = authorityPart.includes("@");
@@ -134,7 +159,7 @@ export function analyzeUrl(raw: string): AnalysisResult {
     });
     if (hasAtSymbol) score += 30;
 
-    // ── Step 4: URL Shortener (+20) ──
+    // ── Step 5: URL Shortener (+20) ──
     const shortenerMatch = URL_SHORTENERS.find((s) => lower.includes(s));
     findings.push({
         label: "URL shortener detected",
@@ -146,13 +171,16 @@ export function analyzeUrl(raw: string): AnalysisResult {
     });
     if (shortenerMatch) score += 20;
 
-    // ── Step 5: High Entropy Domain (+20) ──
-    const suffix = regDomain.substring(regDomain.indexOf("."));
-    const domainBase = hostname.endsWith(suffix) ? hostname.slice(0, -suffix.length) : hostname;
-    const entropy = shannonEntropy(domainBase);
-    // Shannon entropy > 3.5 mathematically requires a length of at least 12 characters (log2(12) ≈ 3.58).
-    // This is a reliable threshold for long random/DGA domains while preventing false positives on short words.
-    const highEntropy = entropy > 3.5 && domainBase.length >= 12;
+    // ── Step 6: High Entropy Domain (+20) ──
+    let highEntropy = false;
+    if (!isIp) {
+        const suffix = regDomain.substring(regDomain.indexOf("."));
+        const domainBase = hostname.endsWith(suffix) ? hostname.slice(0, -suffix.length) : hostname;
+        const entropy = shannonEntropy(domainBase);
+        // Shannon entropy > 3.5 mathematically requires a length of at least 12 characters (log2(12) ≈ 3.58).
+        // This is a reliable threshold for long random/DGA domains while preventing false positives on short words.
+        highEntropy = entropy > 3.5 && domainBase.length >= 12;
+    }
     findings.push({
         label: "High entropy domain name",
         description: highEntropy
@@ -163,8 +191,8 @@ export function analyzeUrl(raw: string): AnalysisResult {
     });
     if (highEntropy) score += 20;
 
-    // ── Step 6: Suspicious TLD (+15) ──
-    const suspiciousTld = SUSPICIOUS_TLDS.find((tld) => hostname.endsWith(tld));
+    // ── Step 7: Suspicious TLD (+15) ──
+    const suspiciousTld = !isIp && SUSPICIOUS_TLDS.find((tld) => hostname.endsWith(tld));
     findings.push({
         label: "Suspicious top-level domain",
         description: suspiciousTld
@@ -175,7 +203,7 @@ export function analyzeUrl(raw: string): AnalysisResult {
     });
     if (suspiciousTld) score += 15;
 
-    // ── Step 7: HTTP Instead of HTTPS (+10) ──
+    // ── Step 8: HTTP Instead of HTTPS (+10) ──
     const isHttp = lower.startsWith("http://");
     findings.push({
         label: "HTTP instead of HTTPS",
@@ -187,9 +215,9 @@ export function analyzeUrl(raw: string): AnalysisResult {
     });
     if (isHttp) score += 10;
 
-    // ── Step 8: Excessive Subdomains (+10) ──
+    // ── Step 9: Excessive Subdomains (+10) ──
     const subdomainCount = hostname.split(".").length - 2;
-    const excessiveSubdomains = subdomainCount > 3;
+    const excessiveSubdomains = !isIp && subdomainCount > 3;
     findings.push({
         label: "Excessive subdomains",
         description: excessiveSubdomains
