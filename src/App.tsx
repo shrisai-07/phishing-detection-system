@@ -62,9 +62,7 @@ const SECURITY_TIPS = [
     icon: ShieldAlert,
     color: "text-red-500 bg-red-500/10"
   }
-];
-
-function riskBadgeColors(score: number) {
+];function riskBadgeColors(score: number) {
   if (score <= 25) return "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/50";
   if (score <= 50) return "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200/50";
   if (score <= 75) return "bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400 border border-orange-200/50";
@@ -91,6 +89,7 @@ function App() {
   });
 
   const [currentTip, setCurrentTip] = useState(0);
+  const [ledgerFilter, setLedgerFilter] = useState<"all" | "critical" | "safe">("all");
 
   const toggleDark = () => {
     setDark((prev) => {
@@ -170,6 +169,13 @@ function App() {
 
   const ActiveTipIcon = SECURITY_TIPS[currentTip].icon;
 
+  // Filtered Ledger List
+  const filteredHistory = history.filter((item) => {
+    if (ledgerFilter === "critical") return item.result.score > 50;
+    if (ledgerFilter === "safe") return item.result.score <= 25;
+    return true;
+  });
+
   return (
     <div className="min-h-screen bg-background font-sans antialiased flex flex-col relative overflow-hidden transition-colors duration-300">
       
@@ -182,14 +188,9 @@ function App() {
       <header className="border-b border-border/60 backdrop-blur-xs bg-background/50 sticky top-0 z-50">
         <div className="mx-auto flex max-w-7xl items-center gap-2.5 px-6 py-5">
           <Shield className="h-5 w-5 text-foreground animate-pulse-subtle" strokeWidth={2.2} />
-          <div className="flex flex-col">
-            <h1 className="text-lg font-bold tracking-tight text-foreground">
-              Phishing Detection System
-            </h1>
-            <span className="text-[10px] text-muted-foreground tracking-wider uppercase font-semibold">
-              Client-Side Threat Shield
-            </span>
-          </div>
+          <h1 className="text-lg font-bold tracking-tight text-foreground">
+            Phishing Detection System
+          </h1>
           <button
             onClick={toggleDark}
             className="ml-auto p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors border border-border/40 bg-background/40"
@@ -206,7 +207,7 @@ function App() {
         {/* Dual-Column Responsive Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* LEFT COLUMN: Main Checker Interface (7 cols) */}
+          {/* LEFT COLUMN: Scan Console & Widgets (7 cols) */}
           <div className="lg:col-span-7 space-y-6">
             
             {/* Frosted Glass Console Panel */}
@@ -224,10 +225,6 @@ function App() {
                   <TabsTrigger value="call" id="tab-call" className="text-sm font-semibold tracking-wide">
                     Call Verifier
                   </TabsTrigger>
-                  <TabsTrigger value="history" id="tab-history" className="ml-auto flex items-center gap-1.5 text-xs">
-                    <History className="h-3.5 w-3.5" />
-                    History ({history.length})
-                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="url" className="outline-none mt-0">
@@ -239,103 +236,9 @@ function App() {
                 <TabsContent value="call" className="outline-none mt-0">
                   <CallVerifier onScanComplete={(val, res) => saveScan("call", val, res)} />
                 </TabsContent>
-                
-                <TabsContent value="history" className="outline-none mt-0">
-                  <div className="space-y-4 animate-in">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h2 className="text-base font-medium text-foreground mb-1 flex items-center gap-1.5">
-                          <History className="h-4.5 w-4.5 text-muted-foreground" />
-                          Scan History
-                        </h2>
-                        <p className="text-xs text-muted-foreground">
-                          View and reopen reports for your past 50 scans.
-                        </p>
-                      </div>
-                      {history.length > 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={clearHistory}
-                          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 text-xs h-8 px-2.5"
-                        >
-                          <Trash2 className="h-3.5 w-3.5 mr-1" />
-                          Clear All
-                        </Button>
-                      )}
-                    </div>
-
-                    {history.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center border border-dashed border-border/80 rounded-xl p-10 text-center text-muted-foreground/80 bg-muted/5">
-                        <History className="h-8 w-8 mb-3 text-muted-foreground/30" />
-                        <p className="text-sm font-medium text-foreground/80 mb-1">No scan history yet</p>
-                        <p className="text-xs text-muted-foreground/50 max-w-[280px]">
-                          Analyze some URLs, scan messages, or verify phone calls to build your list.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2 max-h-[45vh] overflow-y-auto pr-1">
-                        {history.map((item) => (
-                          <div
-                            key={item.id}
-                            className="flex items-center justify-between p-3 border border-border/60 rounded-xl bg-background/50 hover:bg-muted/10 transition-all duration-200 gap-3"
-                          >
-                            <div className="flex items-start gap-3 min-w-0 flex-1">
-                              <div className="mt-0.5 p-2 rounded-lg bg-muted/80 text-muted-foreground shrink-0 border border-border/20">
-                                {item.type === "url" && <Link className="h-3.5 w-3.5" />}
-                                {item.type === "message" && <MessageSquare className="h-3.5 w-3.5" />}
-                                {item.type === "call" && <Phone className="h-3.5 w-3.5" />}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="font-mono text-xs font-medium text-foreground truncate select-all">
-                                  {item.type === "message" && item.inputValue.length > 60
-                                    ? `${item.inputValue.slice(0, 60)}...`
-                                    : item.inputValue}
-                                </div>
-                                <span className="text-[9px] text-muted-foreground block mt-1">
-                                  {item.timestamp} • <span className="capitalize">{item.type} Check</span>
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-2.5 shrink-0">
-                              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold ${riskBadgeColors(item.result.score)}`}>
-                                {item.result.score}/100
-                              </span>
-                              <div className="flex gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="icon-sm"
-                                  onClick={() => openHistoryReport(item)}
-                                  title="View Report"
-                                  className="text-muted-foreground hover:text-foreground h-7 w-7"
-                                >
-                                  <Eye className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon-sm"
-                                  onClick={() => deleteHistoryItem(item.id)}
-                                  title="Delete Item"
-                                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-7 w-7"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
               </Tabs>
             </div>
-          </div>
 
-          {/* RIGHT COLUMN: Telemetry Stats & Phishing Tips Panel (5 cols) */}
-          <div className="lg:col-span-5 space-y-6">
-            
             {/* Widget 1: Live Security Telemetry */}
             <div className="glass-card rounded-2xl p-6 md:p-7 relative overflow-hidden animate-in">
               <div className="flex items-center justify-between mb-5">
@@ -494,58 +397,128 @@ function App() {
               </div>
             </div>
 
-            {/* Widget 3: Activity Radar (Mini Feed) */}
-            <div className="glass-card rounded-2xl p-6 md:p-7 animate-in">
+          </div>
+
+          {/* RIGHT COLUMN: Activity Radar / Search Ledger (5 cols) */}
+          <div className="lg:col-span-5 space-y-6">
+            
+            {/* Widget: Activity Radar & Search Ledger */}
+            <div className="glass-card rounded-2xl p-6 md:p-7 flex flex-col h-full animate-in relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-bl-full pointer-events-none" />
+              
               <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                  Activity Radar
-                </span>
-                <span className="text-[10px] text-muted-foreground font-medium">
-                  Last 3 Checks
-                </span>
+                <div className="flex items-center gap-2">
+                  <History className="h-4.5 w-4.5 text-muted-foreground" />
+                  <h2 className="text-sm font-bold tracking-wider text-muted-foreground uppercase">
+                    Security Ledger
+                  </h2>
+                </div>
+                {history.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearHistory}
+                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 text-[10px] h-7 px-2"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-1" />
+                    Clear All
+                  </Button>
+                )}
               </div>
 
-              {history.length === 0 ? (
-                <div className="py-6 text-center text-xs text-muted-foreground/50 border border-dashed border-border/60 rounded-xl bg-muted/5">
-                  Radar idle. No scans logged.
+              {/* Filters */}
+              <div className="flex gap-1.5 mb-4">
+                <button
+                  onClick={() => setLedgerFilter("all")}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                    ledgerFilter === "all"
+                      ? "bg-foreground text-background border-foreground shadow-2xs"
+                      : "bg-background/40 text-muted-foreground border-border/40 hover:border-border"
+                  }`}
+                >
+                  All ({history.length})
+                </button>
+                <button
+                  onClick={() => setLedgerFilter("critical")}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                    ledgerFilter === "critical"
+                      ? "bg-red-500 text-white border-red-500 shadow-2xs"
+                      : "bg-background/40 text-muted-foreground border-border/40 hover:border-border"
+                  }`}
+                >
+                  High Risk ({history.filter(h => h.result.score > 50).length})
+                </button>
+                <button
+                  onClick={() => setLedgerFilter("safe")}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                    ledgerFilter === "safe"
+                      ? "bg-emerald-500 text-white border-emerald-500 shadow-2xs"
+                      : "bg-background/40 text-muted-foreground border-border/40 hover:border-border"
+                  }`}
+                >
+                  Safe ({history.filter(h => h.result.score <= 25).length})
+                </button>
+              </div>
+
+              {/* Search History List */}
+              {filteredHistory.length === 0 ? (
+                <div className="flex-grow flex flex-col items-center justify-center border border-dashed border-border/80 rounded-xl p-8 text-center text-muted-foreground/80 bg-muted/5 min-h-[300px]">
+                  <History className="h-7 w-7 mb-2 text-muted-foreground/30" />
+                  <p className="text-xs font-medium text-foreground/80 mb-0.5">No records found</p>
+                  <p className="text-[10px] text-muted-foreground/50 max-w-[200px]">
+                    {history.length === 0 
+                      ? "Perform checks to populate this ledger list." 
+                      : "No items match your active safety filter."}
+                  </p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {history.slice(0, 3).map((item) => (
+                <div className="space-y-3 overflow-y-auto max-h-[72vh] pr-1 flex-grow">
+                  {filteredHistory.map((item) => (
                     <div 
-                      key={`radar-${item.id}`} 
-                      className="flex items-center justify-between p-2.5 rounded-xl bg-muted/15 border border-border/40 hover:bg-muted/30 transition-colors"
+                      key={`ledger-${item.id}`}
+                      className="flex flex-col p-3 rounded-xl bg-background/50 border border-border/60 hover:bg-muted/10 transition-all duration-200 gap-2.5 relative group overflow-hidden"
                     >
-                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <div className="p-1.5 rounded-lg bg-background text-muted-foreground shrink-0 border border-border/40 shadow-2xs">
-                          {item.type === "url" && <Link className="h-3 w-3" />}
-                          {item.type === "message" && <MessageSquare className="h-3 w-3" />}
-                          {item.type === "call" && <Phone className="h-3 w-3" />}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                          <div className="mt-0.5 p-1.5 rounded-lg bg-muted text-muted-foreground shrink-0 border border-border/25 shadow-2xs">
+                            {item.type === "url" && <Link className="h-3.5 w-3.5" />}
+                            {item.type === "message" && <MessageSquare className="h-3.5 w-3.5" />}
+                            {item.type === "call" && <Phone className="h-3.5 w-3.5" />}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <span className="font-mono text-xs font-semibold text-foreground select-all leading-normal break-all block">
+                              {item.type === "message" && item.inputValue.length > 80
+                                ? `${item.inputValue.slice(0, 80)}...`
+                                : item.inputValue}
+                            </span>
+                            <span className="text-[9px] text-muted-foreground/80 block mt-1">
+                              {item.timestamp} • <span className="capitalize">{item.type} check</span>
+                            </span>
+                          </div>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <span className="text-xs font-mono font-medium text-foreground truncate block select-all">
-                            {item.type === "message" && item.inputValue.length > 30
-                              ? `${item.inputValue.slice(0, 30)}...`
-                              : item.inputValue}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
-                          item.result.score <= 25 ? "bg-emerald-500/10 text-emerald-500" :
-                          item.result.score <= 50 ? "bg-amber-500/10 text-amber-500" : "bg-red-500/10 text-red-500"
-                        }`}>
+
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold shrink-0 ${riskBadgeColors(item.result.score)}`}>
                           {item.result.score}/100
                         </span>
+                      </div>
+
+                      {/* Hover action bar */}
+                      <div className="flex justify-end gap-1.5 pt-1.5 border-t border-border/30">
                         <Button
                           variant="ghost"
-                          size="icon"
+                          size="sm"
                           onClick={() => openHistoryReport(item)}
-                          className="h-6 w-6 text-muted-foreground hover:text-foreground shrink-0"
-                          title="View Details"
+                          className="h-7 text-[10px] px-2.5 text-muted-foreground hover:text-foreground font-semibold"
                         >
-                          <Eye className="h-3.5 w-3.5" />
+                          <Eye className="h-3.5 w-3.5 mr-1" /> View Report
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteHistoryItem(item.id)}
+                          className="h-7 text-[10px] px-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 font-semibold"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     </div>
