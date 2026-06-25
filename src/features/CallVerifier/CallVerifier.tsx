@@ -63,7 +63,7 @@ export function CallVerifier({ onScanComplete }: { onScanComplete?: (value: stri
                             id="region-select"
                             value={selectedRegion}
                             onChange={(e) => setSelectedRegion(e.target.value)}
-                            className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 w-[120px] dark:bg-input/30"
+                            className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 w-[120px] dark:bg-input/30 [&>option]:bg-background [&>option]:text-foreground"
                         >
                             <option value="">Region...</option>
                             <option value="91">🇮🇳 IN (+91)</option>
