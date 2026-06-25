@@ -6,7 +6,7 @@ import { CallVerifier } from "@/features/CallVerifier/CallVerifier";
 import { ReportModal } from "@/components/custom/ReportModal";
 import { type AnalysisResult } from "@/lib/analysis";
 import { Button } from "@/components/ui/button";
-import { Shield, History, Trash2, Eye, Link, MessageSquare, Phone } from "lucide-react";
+import { Shield, History, Trash2, Eye, Link, MessageSquare, Phone, Sun, Moon } from "lucide-react";
 
 interface HistoryItem {
   id: string;
@@ -32,6 +32,24 @@ function App() {
       return [];
     }
   });
+
+  const [dark, setDark] = useState(() => {
+    const saved = localStorage.getItem("phishing_detector_theme");
+    if (saved === "dark") { document.documentElement.classList.add("dark"); return true; }
+    if (saved === "light") return false;
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if (prefersDark) document.documentElement.classList.add("dark");
+    return prefersDark;
+  });
+
+  const toggleDark = () => {
+    setDark((prev) => {
+      const next = !prev;
+      document.documentElement.classList.toggle("dark", next);
+      localStorage.setItem("phishing_detector_theme", next ? "dark" : "light");
+      return next;
+    });
+  };
 
   // Modal state for viewing report from history list
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
@@ -86,6 +104,13 @@ function App() {
           <h1 className="text-lg font-semibold tracking-tight text-foreground">
             Phishing Detection System
           </h1>
+          <button
+            onClick={toggleDark}
+            className="ml-auto p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+            aria-label="Toggle dark mode"
+          >
+            {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
         </div>
       </header>
 

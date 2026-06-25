@@ -111,7 +111,7 @@ export function analyzeUrl(raw: string): AnalysisResult {
     // ── Step 1: Homograph Attack (+40) ──
     const homoglyphDetected = hasHomoglyphs(hostname);
     findings.push({
-        label: "Homograph attack detection",
+        label: "Fake letters that look real",
         description: homoglyphDetected
             ? "The domain uses characters that look like normal letters but are not — a common trick to make fake sites look real."
             : "The domain uses standard Latin characters only.",
@@ -122,7 +122,7 @@ export function analyzeUrl(raw: string): AnalysisResult {
     // ── Step 2: Raw IP Address Hostname (+40) ──
     const isIp = isIpAddress(hostname);
     findings.push({
-        label: "Raw IP address hostname",
+        label: "Hidden destination (raw IP address)",
         description: isIp
             ? "The URL uses a raw IP address instead of a domain name. Phishers use this to bypass domain reputation checks. Legitimate websites almost never do this."
             : "The URL uses a domain name hostname, not a raw IP address.",
@@ -136,7 +136,7 @@ export function analyzeUrl(raw: string): AnalysisResult {
         (brand) => lower.includes(brand) && !regDomain.includes(brand)
     );
     findings.push({
-        label: "Brand name used as subdomain",
+        label: "Trusted brand name being misused",
         description: brandInSubdomain
             ? "A well-known brand name appears in the link, but the actual destination website is something else entirely."
             : "No well-known brand names being misused in the URL structure.",
@@ -150,7 +150,7 @@ export function analyzeUrl(raw: string): AnalysisResult {
     const authorityPart = urlWithoutProtocol.split(/[/?#]/)[0];
     const hasAtSymbol = authorityPart.includes("@");
     findings.push({
-        label: "@ symbol in URL",
+        label: "Hidden redirect trick (@)",
         description: hasAtSymbol
             ? "The '@' symbol forces browsers to ignore everything before it and navigate to a different destination — this has virtually no legitimate use."
             : "No '@' symbol redirection trick detected.",
@@ -162,7 +162,7 @@ export function analyzeUrl(raw: string): AnalysisResult {
     // ── Step 5: URL Shortener (+20) ──
     const shortenerMatch = URL_SHORTENERS.find((s) => lower.includes(s));
     findings.push({
-        label: "URL shortener detected",
+        label: "Link shortener hides real destination",
         description: shortenerMatch
             ? `This link uses a URL shortener (${shortenerMatch}) which hides the true destination.`
             : "The link does not use a URL shortener.",
@@ -182,7 +182,7 @@ export function analyzeUrl(raw: string): AnalysisResult {
         highEntropy = entropy > 3.5 && domainBase.length >= 12;
     }
     findings.push({
-        label: "High entropy domain name",
+        label: "Randomly generated website name",
         description: highEntropy
             ? "The domain name looks random or auto-generated, which is common with phishing sites."
             : "The domain name appears human-readable.",
@@ -194,7 +194,7 @@ export function analyzeUrl(raw: string): AnalysisResult {
     // ── Step 7: Suspicious TLD (+15) ──
     const suspiciousTld = !isIp && SUSPICIOUS_TLDS.find((tld) => hostname.endsWith(tld));
     findings.push({
-        label: "Suspicious top-level domain",
+        label: "Suspicious website type",
         description: suspiciousTld
             ? `This type of domain extension (${suspiciousTld}) is rarely used by legitimate websites and is statistically associated with phishing.`
             : "The domain extension is commonly used by legitimate websites.",
@@ -206,7 +206,7 @@ export function analyzeUrl(raw: string): AnalysisResult {
     // ── Step 8: HTTP Instead of HTTPS (+10) ──
     const isHttp = lower.startsWith("http://");
     findings.push({
-        label: "HTTP instead of HTTPS",
+        label: "Connection is not encrypted",
         description: isHttp
             ? "The connection is not encrypted. Any legitimate site handling personal data uses HTTPS."
             : "Uses an encrypted connection (HTTPS).",
@@ -219,7 +219,7 @@ export function analyzeUrl(raw: string): AnalysisResult {
     const subdomainCount = hostname.split(".").length - 2;
     const excessiveSubdomains = !isIp && subdomainCount > 3;
     findings.push({
-        label: "Excessive subdomains",
+        label: "Unusually complex web address",
         description: excessiveSubdomains
             ? "More than three subdomain levels is unusual and may be used to bury the real domain name."
             : "The subdomain structure looks normal.",
@@ -305,7 +305,7 @@ export function analyzeMessage(text: string): AnalysisResult {
         }
     }
     findings.push({
-        label: "Requests sensitive information",
+        label: "Asks for your private data",
         description: requestsSensitive
             ? "The message asks for sensitive data like an OTP, PIN, password, or card number. No legitimate company ever requests this via text."
             : "No requests for sensitive personal data were detected.",
@@ -319,7 +319,7 @@ export function analyzeMessage(text: string): AnalysisResult {
     const hasUrgency = URGENCY_PHRASES.some((p) => lower.includes(p));
     const urlPlusUrgency = hasUrl && hasUrgency;
     findings.push({
-        label: "URL combined with urgency language",
+        label: "Suspicious link with pressure language",
         description: urlPlusUrgency
             ? "The message contains a link alongside pressure language — the most common phishing delivery pattern."
             : hasUrl
@@ -333,7 +333,7 @@ export function analyzeMessage(text: string): AnalysisResult {
     // ── Step 3: Leetspeak / Character Substitutions (+25) ──
     const leetspeakFound = LEETSPEAK_PATTERNS.some((r) => r.test(text));
     findings.push({
-        label: "Leetspeak or character substitutions",
+        label: "Disguised spelling to trick filters",
         description: leetspeakFound
             ? "The message deliberately misspells words with number/letter substitutions to bypass filters — a clear scam indicator."
             : "No character substitution tricks were detected.",
@@ -347,7 +347,7 @@ export function analyzeMessage(text: string): AnalysisResult {
     const otherRedFlags = requestsSensitive || urlPlusUrgency || leetspeakFound || hasUrgency;
     const brandImpersonation = !!mentionedBrand && otherRedFlags;
     findings.push({
-        label: "Known brand impersonation",
+        label: "Pretending to be a known company",
         description: brandImpersonation
             ? `The message claims to be from "${mentionedBrand}" while also showing other suspicious patterns — a strong impersonation signal.`
             : mentionedBrand
@@ -362,7 +362,7 @@ export function analyzeMessage(text: string): AnalysisResult {
     // Only count independently if URL+urgency combo wasn't already triggered
     const timePressure = hasUrgency && !urlPlusUrgency;
     findings.push({
-        label: "Time pressure language",
+        label: "Creates panic to rush you",
         description: hasUrgency
             ? "The message creates urgency and panic to stop you from thinking critically — a core psychological weapon in phishing."
             : "No time pressure language was detected.",
@@ -374,7 +374,7 @@ export function analyzeMessage(text: string): AnalysisResult {
     // ── Step 6: Generic Greeting (+10) ──
     const genericGreeting = GENERIC_GREETINGS.some((g) => lower.includes(g));
     findings.push({
-        label: "Generic greeting",
+        label: "Generic greeting (doesn't know your name)",
         description: genericGreeting
             ? "The message uses a generic greeting like 'Dear Customer' — real companies that contact you know your name."
             : "No generic bulk-send greeting detected.",
@@ -394,7 +394,7 @@ export function analyzeMessage(text: string): AnalysisResult {
     ];
     const grammarIssues = grammarFlags.some((r) => r.test(text));
     findings.push({
-        label: "Grammar or encoding anomalies",
+        label: "Unusual grammar patterns",
         description: grammarIssues
             ? "Unusual grammar patterns were detected that are common in automated or non-native phishing messages."
             : "No obvious grammar anomalies detected.",
@@ -588,7 +588,7 @@ export function analyzePhone(rawNumber: string, defaultCountryCode?: string): An
         }
     }
     findings.push({
-        label: "E.164 structural validation",
+        label: "Invalid phone number format",
         description: e164Fail
             ? `This number fails the international phone number standard${matchedRule ? ` for ${matchedRule.name}` : ""}. Real numbers always follow these structural rules.`
             : `The number follows valid structural rules${matchedRule ? ` for ${matchedRule.name}` : ""}.`,
@@ -600,7 +600,7 @@ export function analyzePhone(rawNumber: string, defaultCountryCode?: string): An
     // ── Step 2: One-Ring Scam Country Code (+35) ──
     const oneRingMatch = ONE_RING_SCAM_CODES.find((c) => processedDigits.startsWith(c));
     findings.push({
-        label: "Known one-ring scam country code",
+        label: "Known scam country code",
         description: oneRingMatch
             ? `This number uses country code +${oneRingMatch}, which is notorious for one-ring scams that charge premium rates when you call back.`
             : "The country code is not associated with one-ring scam operations.",
@@ -616,7 +616,7 @@ export function analyzePhone(rawNumber: string, defaultCountryCode?: string): An
     const hasContiguousRepeat = /(\d)\1{5,}/.test(targetDigitsForPattern);
     const repetitivePattern = allSameDigit || sequential || hasContiguousRepeat;
     findings.push({
-        label: "Repetitive or sequential digit pattern",
+        label: "Suspicious number pattern",
         description: repetitivePattern
             ? "The number contains a suspicious pattern of repeating or sequential digits — a signature of auto-dialler systems used by scammers."
             : "The digit distribution looks like a naturally assigned number.",
@@ -631,7 +631,7 @@ export function analyzePhone(rawNumber: string, defaultCountryCode?: string): An
         voipDetected = matchedRule.voipPrefixes.some((p) => nationalDigits.startsWith(p));
     }
     findings.push({
-        label: "VOIP prefix detected",
+        label: "Internet-based phone (easy to fake)",
         description: voipDetected
             ? "This number matches a known VOIP (internet phone) prefix — VOIP numbers are cheap, disposable, and commonly used by scam operations."
             : "No VOIP prefix was detected.",
@@ -647,7 +647,7 @@ export function analyzePhone(rawNumber: string, defaultCountryCode?: string): An
         impossibleAreaCode = matchedRule.invalidAreaCodes.includes(areaCode);
     }
     findings.push({
-        label: "Impossible area code for region",
+        label: "Fake area code for this region",
         description: impossibleAreaCode
             ? "The area code does not exist for the claimed region — a sign of caller ID spoofing."
             : "The area code appears valid for the claimed region.",
