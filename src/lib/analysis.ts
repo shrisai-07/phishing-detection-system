@@ -66,6 +66,14 @@ function hasHomoglyphs(domain: string): boolean {
 /** Extract registered domain (last two parts of hostname) */
 function registeredDomain(hostname: string): string {
     const parts = hostname.split(".");
+    if (parts.length >= 3) {
+        const last = parts[parts.length - 1];
+        const prev = parts[parts.length - 2];
+        // Handle common multi-part country code TLDs (e.g., .co.uk, .com.au, .gov.in)
+        if (last.length === 2 && prev.length <= 3) {
+            return parts.slice(-3).join(".");
+        }
+    }
     return parts.length >= 2 ? parts.slice(-2).join(".") : hostname;
 }
 
