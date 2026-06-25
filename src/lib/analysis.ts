@@ -534,21 +534,38 @@ const ONE_RING_SCAM_CODES = [
     "976",  // Premium US
 ];
 
-export function analyzePhone(rawNumber: string): AnalysisResult {
+export function analyzePhone(rawNumber: string, defaultCountryCode?: string): AnalysisResult {
     const findings: Finding[] = [];
     let score = 0;
 
-    // Clean the input: keep only digits and leading +
-    const cleaned = rawNumber.replace(/[\s\-().]/g, "");
-    const digits = cleaned.replace(/^\+/, "");
+    const trimmed = rawNumber.trim();
+    const hasExplicitPlus = trimmed.startsWith("+");
+    // Clean input: keep only digits
+    const digits = trimmed.replace(/\D/g, "");
+
+    let processedDigits = digits;
+    // Strip leading zero if present for local numbers (e.g. 09876543210 -> 9876543210)
+    let digitsWithoutLeadingZero = digits;
+    if (digits.startsWith("0") && digits.length > 5) {
+        digitsWithoutLeadingZero = digits.slice(1);
+    }
+
+    if (!hasExplicitPlus && defaultCountryCode) {
+        // If it doesn't already start with the default country code, prepend it
+        if (!digitsWithoutLeadingZero.startsWith(defaultCountryCode)) {
+            processedDigits = defaultCountryCode + digitsWithoutLeadingZero;
+        } else {
+            processedDigits = digitsWithoutLeadingZero;
+        }
+    }
 
     // Try to match a country rule
     let matchedRule: CountryRule | null = null;
     let nationalDigits = "";
     for (const rule of COUNTRY_RULES) {
-        if (digits.startsWith(rule.code)) {
+        if (processedDigits.startsWith(rule.code)) {
             matchedRule = rule;
-            nationalDigits = digits.slice(rule.code.length);
+            nationalDigits = processedDigits.slice(rule.code.length);
             break;
         }
     }
@@ -566,7 +583,7 @@ export function analyzePhone(rawNumber: string): AnalysisResult {
         }
     } else {
         // Unknown country code — check basic E.164 length (7–15 digits total)
-        if (digits.length < 7 || digits.length > 15) {
+        if (processedDigits.length < 7 || processedDigits.length > 15) {
             e164Fail = true;
         }
     }
@@ -581,7 +598,7 @@ export function analyzePhone(rawNumber: string): AnalysisResult {
     if (e164Fail) score += 40;
 
     // ── Step 2: One-Ring Scam Country Code (+35) ──
-    const oneRingMatch = ONE_RING_SCAM_CODES.find((c) => digits.startsWith(c));
+    const oneRingMatch = ONE_RING_SCAM_CODES.find((c) => processedDigits.startsWith(c));
     findings.push({
         label: "Known one-ring scam country code",
         description: oneRingMatch
@@ -593,9 +610,11 @@ export function analyzePhone(rawNumber: string): AnalysisResult {
     if (oneRingMatch) score += 35;
 
     // ── Step 3: Repetitive or Sequential Digits (+25) ──
-    const allSameDigit = /^(\d)\1+$/.test(nationalDigits || digits);
-    const sequential = isSequential(nationalDigits || digits);
-    const repetitivePattern = allSameDigit || sequential;
+    const targetDigitsForPattern = nationalDigits || processedDigits;
+    const allSameDigit = /^(\d)\1+$/.test(targetDigitsForPattern);
+    const sequential = isSequential(targetDigitsForPattern);
+    const hasContiguousRepeat = /(\d)\1{5,}/.test(targetDigitsForPattern);
+    const repetitivePattern = allSameDigit || sequential || hasContiguousRepeat;
     findings.push({
         label: "Repetitive or sequential digit pattern",
         description: repetitivePattern

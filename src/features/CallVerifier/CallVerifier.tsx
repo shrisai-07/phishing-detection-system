@@ -9,18 +9,28 @@ const EXAMPLE_SCAM_NUMBER = "+2221234567890";
 
 export function CallVerifier() {
     const [phoneNumber, setPhoneNumber] = useState("");
+    const [selectedRegion, setSelectedRegion] = useState("");
     const [result, setResult] = useState<AnalysisResult | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
+
+    const hasPlus = phoneNumber.trim().startsWith("+");
+    const showRegionWarning = phoneNumber.trim() !== "" && !hasPlus && !selectedRegion;
 
     function handleVerify(value?: string) {
         const target = (value ?? phoneNumber).trim();
         if (!target) return;
-        setResult(analyzePhone(target));
+        
+        const isTargetPlus = target.startsWith("+");
+        const defaultRegion = isTargetPlus ? undefined : selectedRegion;
+
+        setResult(analyzePhone(target, defaultRegion));
         setModalOpen(true);
     }
 
     function handleKeyDown(e: React.KeyboardEvent) {
-        if (e.key === "Enter") handleVerify();
+        if (e.key === "Enter" && (hasPlus || selectedRegion)) {
+            handleVerify();
+        }
     }
 
     function handleTryExample() {
@@ -35,29 +45,50 @@ export function CallVerifier() {
                     Phone Verifier
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                    Enter a phone number (with country code) to check for fraud patterns.
+                    Enter a phone number to check for fraud patterns. Local numbers require a region selection.
                 </p>
             </div>
 
-            <div className="flex gap-2">
-                <Input
-                    id="phone-input"
-                    type="tel"
-                    placeholder="+91 98765 43210"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    className="flex-1 font-mono text-sm"
-                />
-                <Button
-                    id="phone-verify-btn"
-                    onClick={() => handleVerify()}
-                    disabled={!phoneNumber.trim()}
-                    size="default"
-                >
-                    <PhoneCall className="h-4 w-4 mr-1.5" />
-                    Verify
-                </Button>
+            <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                    {!hasPlus && (
+                        <select
+                            id="region-select"
+                            value={selectedRegion}
+                            onChange={(e) => setSelectedRegion(e.target.value)}
+                            className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 w-[120px] dark:bg-input/30"
+                        >
+                            <option value="">Region...</option>
+                            <option value="91">🇮🇳 IN (+91)</option>
+                            <option value="1">🇺🇸 US (+1)</option>
+                            <option value="44">🇬🇧 UK (+44)</option>
+                            <option value="61">🇦🇺 AU (+61)</option>
+                        </select>
+                    )}
+                    <Input
+                        id="phone-input"
+                        type="tel"
+                        placeholder={hasPlus ? "+91 98765 43210" : "98765 43210"}
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        className="flex-1 font-mono text-sm"
+                    />
+                    <Button
+                        id="phone-verify-btn"
+                        onClick={() => handleVerify()}
+                        disabled={!phoneNumber.trim() || (!hasPlus && !selectedRegion)}
+                        size="default"
+                    >
+                        <PhoneCall className="h-4 w-4 mr-1.5" />
+                        Verify
+                    </Button>
+                </div>
+                {showRegionWarning && (
+                    <p className="text-xs text-destructive animate-in">
+                        ⚠️ Please select a region or include a country code (starting with +) to verify this number.
+                    </p>
+                )}
             </div>
 
             <button
